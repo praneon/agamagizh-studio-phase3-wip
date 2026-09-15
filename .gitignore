@@ -1,0 +1,19 @@
+# Restorable dependencies and generated application output
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+tmp/
+logs/
+
+# Local credentials and runtime configuration
+.env
+.env.*
+!.env.example
+
+# Local/editor operating-system state
+*.log
+.DS_Store
+.vscode/
+.idea/
