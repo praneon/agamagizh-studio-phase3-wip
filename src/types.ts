@@ -1,102 +1,123 @@
+/**
+ * Studio Frontend Presentation, Operational, and Pipeline Types
+ * Authoritative Canonical Type Definitions matching Agamagizh Studio Specifications
+ */
+
 export type TopNavSection = 
   | 'my-inbox'
+  | 'my_inbox'
   | 'conversations'
   | 'captain'
   | 'contacts'
   | 'companies'
   | 'reports'
   | 'clinic-pipeline'
+  | 'clinic_pipeline'
+  | 'pipeline'
   | 'campaigns'
   | 'whatsapp'
   | 'help-center'
+  | 'help_center'
   | 'settings';
 
 export type WhatsAppSubSection = 
   | 'overview'
   | 'inbox'
+  | 'conversations'
   | 'contacts'
   | 'broadcasts'
+  | 'campaigns'
   | 'templates'
   | 'pipelines'
   | 'automations'
+  | 'rules'
   | 'chatbots'
   | 'analytics'
   | 'settings';
 
 export interface AgentUser {
-  id: string;
+  id: string | number;
   name: string;
-  email: string;
-  avatar: string;
-  role: 'Administrator' | 'Agent';
+  email?: string;
+  avatar?: string;
+  role: 'Administrator' | 'Agent' | string;
   status: 'online' | 'busy' | 'offline';
-  assignedInboxCount: number;
+  assignedInboxCount?: number;
 }
 
 export interface Contact {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   phone: string;
   avatar?: string;
   company?: string;
   lastActivity: string;
-  status: 'active' | 'archived';
-  labels: string[];
+  status?: 'active' | 'archived';
+  labels?: string[];
   conversationsCount: number;
-  channel: 'whatsapp' | 'live_chat' | 'email' | 'sms';
+  channel?: 'whatsapp' | 'live_chat' | 'email' | 'sms' | string;
   location?: string;
-  customAttributes: Record<string, string>;
+  consentStatus?: 'opted_in' | 'opted_out' | 'unconfirmed' | string;
+  customAttributes?: Record<string, any>;
 }
 
 export interface Company {
   id: string;
   name: string;
-  domain: string;
-  industry: string;
-  phone: string;
-  address: string;
-  contactsCount: number;
-  openConversations: number;
+  domain?: string;
+  industry?: string;
+  phone?: string;
+  address?: string;
+  contactsCount?: number;
+  openConversations?: number;
+  dealsCount?: number;
 }
 
 export interface MessageAttachment {
+  id?: string;
   name: string;
-  type: 'pdf' | 'image' | 'audio' | 'doc';
-  size: string;
+  type: 'pdf' | 'image' | 'audio' | 'doc' | 'video' | 'file';
+  size?: string;
   url?: string;
 }
 
 export interface Message {
   id: string;
   conversationId?: string;
-  sender: 'contact' | 'agent' | 'system';
+  sender: 'contact' | 'agent' | 'system' | 'bot';
   senderName?: string;
   text: string;
   timestamp: string;
   status?: 'sent' | 'delivered' | 'read' | 'failed';
   isPrivateNote?: boolean;
-  attachments?: MessageAttachment[];
+  attachments?: MessageAttachment[] | Array<{
+    id: string;
+    type: 'image' | 'audio' | 'video' | 'file';
+    url: string;
+    name: string;
+    size?: string;
+  }>;
 }
 
 export interface Conversation {
   id: string;
-  contactId: string;
+  contactId?: string;
   contactName: string;
   contactPhone: string;
-  contactEmail: string;
-  channel: 'whatsapp' | 'live_chat' | 'email' | 'sms';
+  contactEmail?: string;
+  channel?: 'whatsapp' | 'live_chat' | 'email' | 'sms' | 'web' | string;
   status: 'open' | 'pending' | 'snoozed' | 'resolved';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  assignedAgent: string;
-  assignedTeam: string;
+  assignedAgent?: string;
+  assignedTeam?: string;
   labels: string[];
   lastMessage: string;
   lastTimestamp: string;
   unreadCount: number;
   inbox: string;
   messages: Message[];
-  customAttributes?: Record<string, string>;
+  customAttributes?: Record<string, any>;
 }
 
 // Clinic Pipeline (Operational Kanban board)
@@ -114,12 +135,14 @@ export interface ClinicPipelineCard {
   contactName: string;
   contactPhone: string;
   company?: string;
-  value: string;
-  assignedAgent: string;
-  priority: 'urgent' | 'high' | 'medium' | 'low';
-  labels: string[];
-  nextActivity: string;
+  value?: string;
+  assignedAgent?: string;
+  assignedTeam?: string;
+  priority?: 'urgent' | 'high' | 'medium' | 'low';
+  labels?: string[];
+  nextActivity?: string;
   lastContacted: string;
+  nextActionDate?: string;
   conversationId?: string;
 }
 
@@ -131,24 +154,29 @@ export type CampaignStatus =
   | 'paused' 
   | 'completed' 
   | 'cancelled' 
-  | 'failed';
+  | 'failed'
+  | 'archived';
 
 export type AudienceType = 
   | 'labels' 
   | 'csv' 
   | 'saved_filter' 
-  | 'manual';
+  | 'manual'
+  | 'all'
+  | 'filter';
 
 export interface WhatsAppCampaign {
   id: string;
   title: string;
-  channelInbox: string;
+  channelInbox?: string;
+  inbox?: string;
   status: CampaignStatus;
   audienceType: AudienceType;
   audienceSummary: string;
-  templateId: string;
-  templateName: string;
+  templateId?: string;
+  templateName?: string;
   scheduledAt?: string;
+  completedAt?: string;
   totalRecipients: number;
   sentCount: number;
   deliveredCount: number;
@@ -182,22 +210,24 @@ export interface WhatsAppTemplate {
   category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION';
   language: string;
   status: TemplateStatus;
-  source?: 'local_draft' | 'provider';
-  isCampaignEligible: boolean;
+  source?: 'local_draft' | 'provider' | string;
+  isCampaignEligible?: boolean;
   rejectionReason?: string;
   lastSyncedAt?: string;
   createdAt?: string;
+  lastUpdated?: string;
   header?: {
-    type: 'none' | 'text' | 'image' | 'document';
+    type?: 'none' | 'text' | 'image' | 'document' | string;
+    format?: 'TEXT' | 'IMAGE' | 'DOCUMENT' | 'VIDEO' | string;
     text?: string;
   };
   body: string;
   footer?: string;
-  buttons?: {
-    type: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER' | 'quick_reply';
+  buttons?: Array<{
+    type: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER' | 'quick_reply' | string;
     text: string;
     value?: string;
-  }[];
+  }>;
   variableExamples?: Record<string, string>;
   variableDescriptions?: Record<string, string>;
 }

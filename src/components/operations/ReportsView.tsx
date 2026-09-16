@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   BarChart3, 
   Clock, 
@@ -11,42 +11,10 @@ import {
   Filter,
   ArrowUpRight
 } from 'lucide-react';
-import { useCrm } from '../../context/CrmContext';
-
-interface AgentReportRow {
-  id: string | number;
-  name: string;
-  avatar: string;
-  role: string;
-  status: string;
-  assignedInboxCount: number;
-  avgResponseTime: string;
-  csat: string;
-}
+import { OPERATIONAL_ANALYTICS_DATA, AGENTS_LIST } from '../../data/mockData';
 
 export const ReportsView: React.FC = () => {
-  const { provider } = useCrm();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('7d');
-  const [agents, setAgents] = useState<AgentReportRow[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getAgents().then(list => {
-      if (!mounted) return;
-      setAgents(list.map((ag: any, idx: number) => ({
-        id: ag.id,
-        name: ag.name,
-        avatar: ag.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'AG',
-        role: ag.role || 'Care Coordinator',
-        status: ag.availability_status || (idx % 2 === 0 ? 'online' : 'offline'),
-        assignedInboxCount: 12 + idx * 4,
-        avgResponseTime: `${3 + idx}m 15s`,
-        csat: `${(96.4 - idx * 0.8).toFixed(1)}%`
-      })));
-    }).catch(err => console.warn(err));
-
-    return () => { mounted = false; };
-  }, [provider]);
 
   const channelStats = [
     { name: 'WhatsApp Official', count: 18420, percent: '76%', color: 'bg-emerald-500' },
@@ -54,12 +22,6 @@ export const ReportsView: React.FC = () => {
     { name: 'Direct Email', count: 1610, percent: '7%', color: 'bg-[#5A4AD2]' },
     { name: 'SMS Notifications', count: 720, percent: '3%', color: 'bg-amber-500' },
   ];
-
-  const operationalAnalytics = {
-    firstResponseTime: '3m 42s',
-    averageResponseTime: '18m 10s',
-    csatScore: '4.85 / 5.0'
-  };
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -102,7 +64,7 @@ export const ReportsView: React.FC = () => {
             <span className="text-[11px] font-bold uppercase tracking-wider">First Response Time</span>
             <Clock className="w-4 h-4 text-[#5A4AD2]" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{operationalAnalytics.firstResponseTime}</div>
+          <div className="text-2xl font-extrabold text-slate-900">{OPERATIONAL_ANALYTICS_DATA.firstResponseTime}</div>
           <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>22% faster than last week</span>
@@ -114,7 +76,7 @@ export const ReportsView: React.FC = () => {
             <span className="text-[11px] font-bold uppercase tracking-wider">Avg. Resolution Time</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{operationalAnalytics.averageResponseTime}</div>
+          <div className="text-2xl font-extrabold text-slate-900">{OPERATIONAL_ANALYTICS_DATA.averageResponseTime}</div>
           <div className="text-[11px] text-slate-500 font-medium">Target: under 20m</div>
         </div>
 
@@ -123,7 +85,7 @@ export const ReportsView: React.FC = () => {
             <span className="text-[11px] font-bold uppercase tracking-wider">Customer CSAT Score</span>
             <TrendingUp className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{operationalAnalytics.csatScore}</div>
+          <div className="text-2xl font-extrabold text-slate-900">{OPERATIONAL_ANALYTICS_DATA.csatScore}</div>
           <div className="text-[11px] text-amber-700 font-semibold">⭐⭐⭐⭐⭐ from 480 ratings</div>
         </div>
 
@@ -216,7 +178,7 @@ export const ReportsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {agents.map((ag) => (
+              {AGENTS_LIST.map((ag) => (
                 <tr key={ag.id} className="hover:bg-slate-50">
                   <td className="py-3 px-4 font-bold text-slate-900 flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-full bg-[#5A4AD2] text-white flex items-center justify-center font-bold text-xs">

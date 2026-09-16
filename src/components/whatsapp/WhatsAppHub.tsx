@@ -11,6 +11,9 @@ import { WhatsAppChatbotsView } from './WhatsAppChatbotsView';
 import { WhatsAppRulesView } from './WhatsAppRulesView';
 import { WhatsAppAnalyticsView } from './WhatsAppAnalyticsView';
 import { PipelineKanbanView } from '../pipeline/PipelineKanbanView';
+import { WhatsAppOverviewView } from './WhatsAppOverviewView';
+import { WhatsAppContactsView } from './WhatsAppContactsView';
+import { SettingsView } from '../settings/SettingsView';
 
 interface WhatsAppHubProps {
   conversations: Conversation[];
@@ -23,9 +26,10 @@ interface WhatsAppHubProps {
   campaigns: WhatsAppCampaign[];
   onCreateCampaign: (campaign: any) => void;
   currentWhatsAppSub?: string;
-  initialSubTab?: 'conversations' | 'templates' | 'campaigns' | 'chatbots' | 'rules' | 'analytics';
+  initialSubTab?: 'overview' | 'conversations' | 'contacts' | 'templates' | 'campaigns' | 'chatbots' | 'rules' | 'analytics' | 'settings';
   onOpenQuickCompose?: () => void;
   onOpenContact?: (contact: Contact) => void;
+  onNavigateSub?: (sub: string) => void;
 }
 
 export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
@@ -41,16 +45,20 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
   currentWhatsAppSub,
   initialSubTab = 'conversations',
   onOpenQuickCompose,
-  onOpenContact
+  onOpenContact,
+  onNavigateSub
 }) => {
   // Determine subTab from currentWhatsAppSub or initialSubTab
   // Left sidebar menu is authoritative:
+  // 'overview' -> overview
   // 'inbox' -> conversations
+  // 'contacts' -> contacts
   // 'templates' -> templates
   // 'campaigns' | 'broadcasts' -> campaigns
   // 'chatbots' -> chatbots
   // 'automations' | 'rules' -> rules
   // 'analytics' -> analytics
+  // 'settings' -> settings
   const activeSub = (currentWhatsAppSub || initialSubTab || 'conversations').toLowerCase();
 
   // Filter WhatsApp specific conversations
@@ -62,6 +70,10 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
 
       {/* Main SubTab View Container */}
       <div className="flex-1 overflow-hidden">
+        {activeSub === 'overview' && (
+          <WhatsAppOverviewView onNavigateSub={onNavigateSub} />
+        )}
+
         {(activeSub === 'conversations' || activeSub === 'inbox') && (
           <ConversationsWorkbench
             conversations={whatsappConversations}
@@ -78,6 +90,16 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
           />
         )}
 
+        {activeSub === 'contacts' && (
+          <WhatsAppContactsView
+            onOpenConversationWithContact={(contact) => {
+              if (onOpenContact) {
+                onOpenContact(contact);
+              }
+            }}
+          />
+        )}
+
         {activeSub === 'templates' && <WhatsAppTemplatesView />}
 
         {(activeSub === 'campaigns' || activeSub === 'broadcasts') && (
@@ -89,6 +111,8 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
         )}
 
         {activeSub === 'chatbots' && <WhatsAppChatbotsView />}
+
+        {activeSub === 'settings' && <SettingsView initialTab="inboxes" />}
 
         {activeSub === 'pipelines' && (
           <PipelineKanbanView

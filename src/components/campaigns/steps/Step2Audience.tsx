@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   CampaignAudienceType, 
   CsvParsedData, 
@@ -9,8 +9,7 @@ import {
   SAVED_CONTACT_FILTERS, 
   MOCK_DEFAULT_CSV 
 } from '../campaignMockData';
-import { useCrm } from '../../../../context/CrmContext';
-import { CrmContactSummary } from '../../../../types/crm';
+import { INITIAL_CONTACTS } from '../../../data/mockData';
 import { 
   Tag, 
   FileSpreadsheet, 
@@ -64,19 +63,6 @@ export const Step2Audience: React.FC<Step2AudienceProps> = ({
   onChangeSelectedContactIds,
   candidateCount
 }) => {
-  const { provider } = useCrm();
-  const [contacts, setContacts] = useState<CrmContactSummary[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getContacts({ page: 1, perPage: 100 }).then(res => {
-      if (mounted) setContacts(res.contacts);
-    }).catch(err => console.error('Failed to load contacts for audience:', err));
-    return () => {
-      mounted = false;
-    };
-  }, [provider]);
-
   // Label search
   const [labelSearch, setLabelSearch] = useState('');
   
@@ -154,31 +140,27 @@ export const Step2Audience: React.FC<Step2AudienceProps> = ({
   };
 
   // Manual contacts handlers
-  const filteredContacts = contacts.filter(c => {
-    const labelTitles = (c.labels || []).map((l: any) => typeof l === 'string' ? l : l.title);
-    if (contactLabelFilter !== 'all' && !labelTitles.includes(contactLabelFilter)) {
+  const filteredContacts = INITIAL_CONTACTS.filter(c => {
+    if (contactLabelFilter !== 'all' && !c.labels.includes(contactLabelFilter)) {
       return false;
     }
     if (contactSearch.trim()) {
       const q = contactSearch.toLowerCase();
-      const phone = c.phone_number || '';
-      const company = ((c.custom_attributes?.company as string) || (c as any).company || '').toLowerCase();
-      return c.name.toLowerCase().includes(q) || phone.includes(q) || company.includes(q);
+      return c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.company.toLowerCase().includes(q);
     }
     return true;
   });
 
-  const handleToggleContact = (id: string | number) => {
-    const strId = String(id);
-    if (selectedContactIds.includes(strId)) {
-      onChangeSelectedContactIds(selectedContactIds.filter(cid => cid !== strId));
+  const handleToggleContact = (id: string) => {
+    if (selectedContactIds.includes(id)) {
+      onChangeSelectedContactIds(selectedContactIds.filter(cid => cid !== id));
     } else {
-      onChangeSelectedContactIds([...selectedContactIds, strId]);
+      onChangeSelectedContactIds([...selectedContactIds, id]);
     }
   };
 
   const handleSelectAllFiltered = () => {
-    const ids = Array.from(new Set([...selectedContactIds, ...filteredContacts.map(c => String(c.id))]));
+    const ids = Array.from(new Set([...selectedContactIds, ...filteredContacts.map(c => c.id)]));
     onChangeSelectedContactIds(ids);
   };
 
@@ -622,11 +604,7 @@ export const Step2Audience: React.FC<Step2AudienceProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredContacts.map((c) => {
-                  const strId = String(c.id);
-                  const isChecked = selectedContactIds.includes(strId);
-                  const company = (c.custom_attributes?.company as string) || (c as any).company || 'Agamagizh Patient';
-                  const phone = c.phone_number || (c as any).phone || 'N/A';
-                  const labelTitles = (c.labels || []).map((l: any) => typeof l === 'string' ? l : l.title);
+                  const isChecked = selectedContactIds.includes(c.id);
                   return (
                     <tr
                       key={c.id}
@@ -645,14 +623,14 @@ export const Step2Audience: React.FC<Step2AudienceProps> = ({
                       </td>
                       <td className="py-2 px-3">
                         <span className="font-bold text-slate-900 block">{c.name}</span>
-                        <span className="text-[10px] text-slate-400">{company}</span>
+                        <span className="text-[10px] text-slate-400">{c.company}</span>
                       </td>
                       <td className="py-2 px-3 font-mono text-slate-700 text-[11px]">
-                        {phone}
+                        {c.phone}
                       </td>
                       <td className="py-2 px-3">
                         <div className="flex flex-wrap gap-1">
-                          {labelTitles.slice(0, 2).map((l: string) => (
+                          {c.labels.slice(0, 2).map((l) => (
                             <span key={l} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold">
                               {l}
                             </span>
@@ -661,7 +639,7 @@ export const Step2Audience: React.FC<Step2AudienceProps> = ({
                       </td>
                       <td className="py-2 px-3 text-right">
                         <span className="capitalize text-[10px] font-bold text-[#5A4AD2]">
-                          whatsapp
+                          {c.channel}
                         </span>
                       </td>
                     </tr>

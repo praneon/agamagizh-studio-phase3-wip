@@ -24,14 +24,27 @@ export const CaptainView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Captain AI Hub</h1>
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+              DEMO / LOCAL-FIRST
+            </span>
             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
               Copilot Engine
             </span>
           </div>
           <p className="text-xs text-[#6E737F]">
-            Operational AI assistant for auto-triage, response enhancements, and grounded clinic knowledge.
+            Operational AI assistant prototype for auto-triage, response enhancements, and grounded clinic knowledge.
           </p>
         </div>
+      </div>
+
+      {/* Local Prototype / Demo Demarcation Banner */}
+      <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="font-semibold">Local-First Sandbox:</span>
+          <span>Captain AI responses run against client-side demonstration protocols. No live external enterprise AI endpoints or production clinical writes are initiated.</span>
+        </div>
+        <span className="text-[10px] uppercase font-bold text-amber-700 shrink-0 bg-amber-100 px-2 py-0.5 rounded">Client Simulation</span>
       </div>
 
       {/* Navigation tabs */}

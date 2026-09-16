@@ -39,8 +39,7 @@ import {
   Sparkles,
   AlertTriangle
 } from 'lucide-react';
-import { useCrm } from '../../context/CrmContext';
-import { toStudioContact } from '../../adapters/crmAdapter';
+import { AGENTS_LIST, CURRENT_USER, INITIAL_CONTACTS } from '../../data/mockData';
 
 interface MyInboxViewProps {
   conversations: Conversation[];
@@ -65,25 +64,6 @@ export const MyInboxView: React.FC<MyInboxViewProps> = ({
   onOpenContact,
   onOpenQuickCompose
 }) => {
-  const { provider, accountContext } = useCrm();
-  const [agents, setAgents] = useState<{ id: string | number; name: string }[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getAgents().then(list => {
-      if (mounted) setAgents(list.map(a => ({ id: a.id, name: a.name })));
-    }).catch(err => console.warn(err));
-
-    provider.getContacts({ page: 1, perPage: 100 }).then(res => {
-      if (mounted) {
-        setContacts(res.contacts.map(toStudioContact));
-      }
-    }).catch(err => console.warn(err));
-
-    return () => { mounted = false; };
-  }, [provider]);
-
   // Operational Filters
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'pending' | 'resolved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,12 +89,10 @@ export const MyInboxView: React.FC<MyInboxViewProps> = ({
   const togglePanelButtonRef = useRef<HTMLButtonElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Current user / agent name
-  const currentAgentName = accountContext.activeAccount?.name || 'Kavitha Sundaram';
-
   // Filter conversations strictly relevant to the signed-in agent
+  // Current user is Kavitha Sundaram
   const agentConversations = conversations.filter(
-    (c) => c.assignedAgent === currentAgentName || c.assignedAgent === 'Kavitha Sundaram' || !c.assignedAgent || c.assignedAgent === 'Unassigned'
+    (c) => c.assignedAgent === CURRENT_USER.name || c.assignedAgent === 'Kavitha Sundaram'
   );
 
   // Apply status and search filters
@@ -1167,25 +1145,8 @@ export const MyInboxView: React.FC<MyInboxViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const cRecord = contacts.find((c) => c.name === activeConvo.contactName || c.phone === activeConvo.contactPhone);
-                    if (cRecord) {
-                      onOpenContact(cRecord);
-                    } else {
-                      onOpenContact({
-                        id: activeConvo.contactId || 'c_' + activeConvo.id,
-                        name: activeConvo.contactName,
-                        email: '',
-                        phone: activeConvo.contactPhone || '',
-                        avatar: activeConvo.avatar,
-                        company: 'Agamagizh Patient',
-                        stage: 'lead',
-                        dealValue: 0,
-                        labels: activeConvo.labels || [],
-                        unreadCount: 0,
-                        channel: (activeConvo.channel as any) || 'whatsapp',
-                        activities: []
-                      });
-                    }
+                    const cRecord = INITIAL_CONTACTS.find((c) => c.name === activeConvo.contactName);
+                    if (cRecord) onOpenContact(cRecord);
                   }}
                   className="w-full mt-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
                 >
@@ -1208,7 +1169,7 @@ export const MyInboxView: React.FC<MyInboxViewProps> = ({
                   onChange={(e) => onUpdateAssignee && onUpdateAssignee(activeConvo.id, e.target.value)}
                   className="w-full text-xs p-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-[#5A4AD2]"
                 >
-                  {agents.map((ag) => (
+                  {AGENTS_LIST.map((ag) => (
                     <option key={ag.id} value={ag.name}>{ag.name}</option>
                   ))}
                   <option value="Unassigned">Unassigned</option>

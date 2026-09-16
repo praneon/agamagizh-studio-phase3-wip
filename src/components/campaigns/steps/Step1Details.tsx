@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { INBOXES_LIST } from '../../../data/mockData';
 import { Building2, MessageSquare, AlertCircle, Info, ShieldCheck } from 'lucide-react';
-import { useCrm } from '../../../../context/CrmContext';
-import { CrmInbox } from '../../../../types/crm';
 
 interface Step1DetailsProps {
   name: string;
@@ -18,21 +17,7 @@ export const Step1Details: React.FC<Step1DetailsProps> = ({
   onChangeChannelInbox,
   showErrors
 }) => {
-  const { provider } = useCrm();
-  const [inboxes, setInboxes] = useState<CrmInbox[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getInboxes().then(list => {
-      if (mounted) setInboxes(list);
-    }).catch(err => console.error('Failed to get inboxes:', err));
-    return () => {
-      mounted = false;
-    };
-  }, [provider]);
-
-  const whatsappInboxes = inboxes.filter(ib => (ib.channel_type || '').toLowerCase().includes('whatsapp') || (ib as any).channel === 'whatsapp');
-  const displayInboxes = whatsappInboxes.length > 0 ? whatsappInboxes : inboxes;
+  const whatsappInboxes = INBOXES_LIST.filter(ib => ib.channel === 'whatsapp');
   const isNameEmpty = showErrors && !name.trim();
 
   return (
@@ -86,9 +71,9 @@ export const Step1Details: React.FC<Step1DetailsProps> = ({
             onChange={(e) => onChangeChannelInbox(e.target.value)}
             className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5A4AD2] focus:bg-white transition-all cursor-pointer"
           >
-            {displayInboxes.map((ib) => (
+            {whatsappInboxes.map((ib) => (
               <option key={ib.id} value={ib.name}>
-                {ib.name} — {ib.phone_number || (ib as any).phone || 'ID #' + ib.id} (Quality Tier: High)
+                {ib.name} — {ib.phone} (Quality Tier: High)
               </option>
             ))}
           </select>

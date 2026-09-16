@@ -60,6 +60,7 @@ export class LocalCrmDataProvider implements CrmDataProvider {
     display_name: 'Dr. Rajesh (Care Ops Lead)',
     email: 'rajesh.sharma@agamagizh.org',
     role: 'administrator',
+    availability: 'online',
     account_id: 1,
     accounts: [
       {
@@ -253,13 +254,13 @@ export class LocalCrmDataProvider implements CrmDataProvider {
   }
 
   async getAgents(inboxId?: number): Promise<CrmAgent[]> {
-    return AGENTS_LIST.map((a, idx) => ({
+    return AGENTS_LIST.map((a: any, idx) => ({
       id: idx + 1,
       name: a.name,
       email: a.email,
-      role: a.role.toLowerCase(),
-      availability_status: a.status,
-      avatar_url: undefined,
+      role: (a.role || 'agent').toLowerCase(),
+      availability: a.status || 'online',
+      avatar_url: a.avatar,
     }));
   }
 
@@ -273,7 +274,7 @@ export class LocalCrmDataProvider implements CrmDataProvider {
   }
 
   // Conversations & Messages
-  async getConversations(params?: { status?: string; q?: string; page?: number }): Promise<{
+  async getConversations(params?: { status?: string; q?: string; page?: number; perPage?: number; per_page?: number }): Promise<{
     conversations: CrmConversationSummary[];
     meta: { count: number; page: number; per_page: number };
   }> {
@@ -290,6 +291,8 @@ export class LocalCrmDataProvider implements CrmDataProvider {
 
     const summaries: CrmConversationSummary[] = list.map(c => ({
       id: Number(c.id) || 1,
+      display_id: Number(c.id) || 1,
+      inbox_id: 101,
       uuid: `uuid-${c.id}`,
       contact: {
         id: Number(c.contactId) || 1,
@@ -303,7 +306,8 @@ export class LocalCrmDataProvider implements CrmDataProvider {
       },
       status: c.status as any,
       unread_count: c.unreadCount,
-      assignee: { id: 1, name: c.assignedAgent },
+      messages_count: (c.messages || []).length,
+      assignee: { id: 1, name: c.assignedAgent, role: 'agent' },
       team: { id: 1, name: c.assignedTeam },
       labels: c.labels,
       can_reply: true,
@@ -329,6 +333,9 @@ export class LocalCrmDataProvider implements CrmDataProvider {
     
     return {
       id: Number(found.id) || 1,
+      display_id: Number(found.id) || 1,
+      inbox_id: 101,
+      messages_count: (found.messages || []).length,
       uuid: `uuid-${found.id}`,
       contact: {
         id: Number(found.contactId) || 1,
@@ -342,7 +349,7 @@ export class LocalCrmDataProvider implements CrmDataProvider {
       },
       status: found.status as any,
       unread_count: found.unreadCount,
-      assignee: { id: 1, name: found.assignedAgent },
+      assignee: { id: 1, name: found.assignedAgent, role: 'agent' },
       team: { id: 1, name: found.assignedTeam },
       labels: found.labels,
       can_reply: true,
@@ -427,7 +434,7 @@ export class LocalCrmDataProvider implements CrmDataProvider {
   }
 
   // Contacts
-  async getContacts(params?: { q?: string; page?: number }): Promise<{
+  async getContacts(params?: { q?: string; page?: number; perPage?: number; per_page?: number }): Promise<{
     contacts: CrmContactSummary[];
     meta: { count: number; page: number; per_page: number };
   }> {
@@ -860,13 +867,15 @@ export class LocalCrmDataProvider implements CrmDataProvider {
       list = list.filter(r => r.status === params.status);
     }
 
-    const payload: BackendCampaignRecipient[] = list.map((r, idx) => ({
+    const payload: BackendCampaignRecipient[] = list.map((r: any, idx) => ({
       id: idx + 1,
-      contact_id: 100 + idx,
-      contact_name: r.contactName,
-      destination: r.phone,
+      contact_id: r.contact_id || (100 + idx),
+      contact_name: r.name || r.contactName || 'Recipient',
+      name: r.name || r.contactName || 'Recipient',
+      destination: r.phone_number || r.phone || '',
+      phone_number: r.phone_number || r.phone || '',
       status: r.status,
-      failure_code: r.reason,
+      failure_code: r.failure_reason || r.reason,
       attempts: 1,
       queued_at: new Date(Date.now() - 3600000).toISOString(),
       sent_at: new Date(Date.now() - 3500000).toISOString(),
@@ -1103,7 +1112,7 @@ export class LocalCrmDataProvider implements CrmDataProvider {
       trigger_summary: 'inbound_whatsapp',
       action_summary: 'send_text, handoff',
       draft_graph: {
-        nodes: INITIAL_CHATBOT.nodes || [],
+        nodes: (INITIAL_CHATBOT as any).nodes || [],
         edges: (INITIAL_CHATBOT as any).edges || [],
       },
       updated_at: new Date().toISOString(),

@@ -200,7 +200,7 @@ export class HttpCrmDataProvider implements CrmDataProvider {
   }
 
   // Conversations
-  async getConversations(params?: { status?: string; q?: string; page?: number }): Promise<{
+  async getConversations(params?: { status?: string; q?: string; page?: number; perPage?: number; per_page?: number }): Promise<{
     conversations: CrmConversationSummary[];
     meta: { count: number; page: number; per_page: number };
   }> {
@@ -209,6 +209,7 @@ export class HttpCrmDataProvider implements CrmDataProvider {
     if (params?.status && params.status !== 'all') query.set('status', params.status);
     if (params?.q) query.set('q', params.q);
     if (params?.page) query.set('page', String(params.page));
+    if (params?.perPage || params?.per_page) query.set('per_page', String(params.perPage || params.per_page));
 
     // Try WhatsApp-specific endpoint first, fallback to standard conversations
     try {
@@ -297,7 +298,7 @@ export class HttpCrmDataProvider implements CrmDataProvider {
   }
 
   // Contacts
-  async getContacts(params?: { q?: string; page?: number }): Promise<{
+  async getContacts(params?: { q?: string; page?: number; perPage?: number; per_page?: number }): Promise<{
     contacts: CrmContactSummary[];
     meta: { count: number; page: number; per_page: number };
   }> {
@@ -305,6 +306,7 @@ export class HttpCrmDataProvider implements CrmDataProvider {
     const query = new URLSearchParams();
     if (params?.q) query.set('q', params.q);
     if (params?.page) query.set('page', String(params.page));
+    if (params?.perPage || params?.per_page) query.set('per_page', String(params.perPage || params.per_page));
 
     try {
       return await this.request(`/api/v1/accounts/${accountId}/whatsapp_contacts?${query.toString()}`);

@@ -40,15 +40,13 @@ interface PipelineKanbanViewProps {
   context?: 'clinic' | 'whatsapp';
   onOpenConversation?: (item: PipelineItem) => void;
   onOpenContact?: (item: PipelineItem) => void;
-  onMoveCard?: (cardId: string, newStageId: string) => Promise<boolean | void> | boolean | void;
 }
 
 export const PipelineKanbanView: React.FC<PipelineKanbanViewProps> = ({
   initialItems,
   context = 'clinic',
   onOpenConversation,
-  onOpenContact,
-  onMoveCard
+  onOpenContact
 }) => {
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -210,34 +208,6 @@ export const PipelineKanbanView: React.FC<PipelineKanbanViewProps> = ({
       });
 
       return false;
-    }
-
-    // Call external move handler if provided (e.g., CRM persistence)
-    if (onMoveCard) {
-      try {
-        const res = await onMoveCard(itemId, newStageId);
-        if (res === false) {
-          throw new Error('CRM update failed or rejected');
-        }
-      } catch (err: any) {
-        setItems(prev => prev.map(item => 
-          item.id === itemId ? { ...item, stageId: previousStageId } : item
-        ));
-        setSavingCardIds(prev => {
-          const next = new Set(prev);
-          next.delete(itemId);
-          return next;
-        });
-        setMoveFailureInfo({
-          itemId,
-          itemTitle: itemToMove.title,
-          fromStageId: previousStageId,
-          fromStageTitle: previousStage?.title || 'previous stage',
-          toStageId: newStageId,
-          errorMessage: err?.message || `Couldn't persist card move to CRM. Reverted to ${previousStage?.title || 'previous stage'}.`
-        });
-        return false;
-      }
     }
 
     // 3. Success

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   WhatsAppCampaign, 
   WhatsAppTemplate 
@@ -11,11 +11,15 @@ import {
   WizardStep 
 } from './types';
 import { 
+  INITIAL_TEMPLATES, 
+  INBOXES_LIST, 
+  INITIAL_CONTACTS 
+} from '../../data/mockData';
+import { 
   MOCK_DEFAULT_CSV, 
   SAVED_CONTACT_FILTERS, 
   AVAILABLE_CRM_LABELS 
 } from './campaignMockData';
-import { useCrm } from '../../context/CrmContext';
 
 import { Step1Details } from './steps/Step1Details';
 import { Step2Audience } from './steps/Step2Audience';
@@ -50,69 +54,14 @@ interface CampaignWizardModalProps {
   initialCampaign?: WhatsAppCampaign | null;
 }
 
-const FALLBACK_TEMPLATE: WhatsAppTemplate = {
-  id: 'hosp_opd_schedule_update_v1',
-  name: 'hosp_opd_schedule_update_v1',
-  category: 'UTILITY',
-  language: 'en',
-  status: 'approved',
-  source: 'provider',
-  isCampaignEligible: true,
-  lastSyncedAt: 'Recently',
-  body: 'Dear {{1}}, the OPD timings for Dr. V. Ramanathan at our {{2}} center will be {{3}} this week.',
-  buttons: []
-};
-
 export const CampaignWizardModal: React.FC<CampaignWizardModalProps> = ({
   isOpen,
   onClose,
   onCreateCampaign,
   initialCampaign
 }) => {
-  const { provider } = useCrm();
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [showStepErrors, setShowStepErrors] = useState(false);
-  const [availableTemplates, setAvailableTemplates] = useState<WhatsAppTemplate[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getProviderTemplates().then(pts => {
-      if (!mounted) return;
-      const formatted: WhatsAppTemplate[] = pts.map(pt => {
-        const bodyComp = pt.components.find(c => c.type === 'BODY');
-        const headerComp = pt.components.find(c => c.type === 'HEADER');
-        const footerComp = pt.components.find(c => c.type === 'FOOTER');
-        const buttonsComp = pt.components.find(c => c.type === 'BUTTONS');
-
-        return {
-          id: pt.id,
-          name: pt.name,
-          category: pt.category,
-          language: pt.language,
-          status: pt.status.toLowerCase() as any,
-          source: 'provider',
-          isCampaignEligible: pt.campaign_eligible,
-          lastSyncedAt: pt.last_synced_at || 'Recently',
-          header: headerComp ? {
-            type: (headerComp.format?.toLowerCase() || 'text') as any,
-            text: headerComp.text,
-          } : undefined,
-          body: bodyComp?.text || '',
-          footer: footerComp?.text,
-          buttons: buttonsComp?.buttons?.map((b: any) => ({
-            type: b.type === 'URL' ? 'URL' : b.type === 'PHONE_NUMBER' ? 'PHONE_NUMBER' : 'QUICK_REPLY',
-            text: b.text,
-            value: b.url || b.phone_number,
-          })) || [],
-        };
-      });
-      setAvailableTemplates(formatted);
-    }).catch(err => console.error('Failed to load templates in wizard:', err));
-
-    return () => {
-      mounted = false;
-    };
-  }, [provider]);
 
   // Default initial draft state
   const [draft, setDraft] = useState<CampaignDraftState>(() => {
@@ -120,14 +69,14 @@ export const CampaignWizardModal: React.FC<CampaignWizardModalProps> = ({
       return {
         id: initialCampaign.id,
         name: initialCampaign.title,
-        channelInbox: initialCampaign.channelInbox || 'Agamagizh WhatsApp Main',
+        channelInbox: initialCampaign.channelInbox || INBOXES_LIST[0].name,
         audienceType: initialCampaign.audienceType,
         selectedLabels: ['Adyar Branch', 'VIP Client'],
         csvData: MOCK_DEFAULT_CSV,
         csvMapping: { nameCol: 'name', phoneCol: 'phone' },
         savedFilterId: SAVED_CONTACT_FILTERS[0].id,
-        selectedContactIds: ['1', '2', '3'],
-        selectedTemplateId: initialCampaign.templateId || 'hosp_opd_schedule_update_v1',
+        selectedContactIds: INITIAL_CONTACTS.slice(0, 4).map(c => c.id),
+        selectedTemplateId: initialCampaign.templateId || INITIAL_TEMPLATES[0].id,
         mappings: {
           '{{1}}': { token: '{{1}}', source: 'contact_name', exampleValue: 'Meera Sundaram' },
           '{{2}}': { token: '{{2}}', source: 'contact_attribute', attributeName: 'preferred_language', exampleValue: 'English' },
@@ -142,14 +91,14 @@ export const CampaignWizardModal: React.FC<CampaignWizardModalProps> = ({
 
     return {
       name: '',
-      channelInbox: 'Agamagizh WhatsApp Main',
+      channelInbox: INBOXES_LIST.find(ib => ib.channel === 'whatsapp')?.name || 'Agamagizh WhatsApp Main',
       audienceType: 'labels',
       selectedLabels: ['Adyar Branch', 'VIP Client'],
       csvData: MOCK_DEFAULT_CSV,
       csvMapping: { nameCol: 'name', phoneCol: 'phone' },
       savedFilterId: SAVED_CONTACT_FILTERS[0].id,
-      selectedContactIds: ['1', '2', '3'],
-      selectedTemplateId: 'hosp_opd_schedule_update_v1',
+      selectedContactIds: INITIAL_CONTACTS.slice(0, 3).map(c => c.id),
+      selectedTemplateId: INITIAL_TEMPLATES[0].id,
       mappings: {
         '{{1}}': { token: '{{1}}', source: 'contact_name', exampleValue: 'Meera Sundaram' },
         '{{2}}': { token: '{{2}}', source: 'contact_attribute', attributeName: 'registered_branch', exampleValue: 'Adyar Main Hub' },
@@ -164,7 +113,7 @@ export const CampaignWizardModal: React.FC<CampaignWizardModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedTemplate = availableTemplates.find(t => t.id === draft.selectedTemplateId) || availableTemplates[0] || FALLBACK_TEMPLATE;
+  const selectedTemplate = INITIAL_TEMPLATES.find(t => t.id === draft.selectedTemplateId) || INITIAL_TEMPLATES[0];
 
   // Dynamic Candidate Count calculation
   const calculateCandidateCount = (): number => {

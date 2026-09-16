@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, 
   Search, 
@@ -21,9 +21,9 @@ import {
   Check
 } from 'lucide-react';
 import { WhatsAppTemplate } from '../../types';
-import { useCrm } from '../../context/CrmContext';
+import { INITIAL_TEMPLATES } from '../../data/mockData';
 import { TemplateBuilder } from '../templates/TemplateBuilder';
-import { TemplateDraft, TemplateButtonType } from '../templates/types';
+import { TemplateDraft, TemplateButtonType, HeaderType, SAMPLE_DRAFTS as SAMPLE_DRAFTS_DICT } from '../templates/types';
 import { SAMPLE_DRAFTS, extractVariablesFromText, interpolateText } from '../templates/templateUtils';
 import { ProviderTemplateDetailModal } from '../templates/ProviderTemplateDetailModal';
 
@@ -48,7 +48,7 @@ function templateToDraft(tpl: WhatsAppTemplate): TemplateDraft {
     status: 'local_draft',
     isCampaignEligible: false,
     header: {
-      type: tpl.header?.type || 'none',
+      type: (tpl.header?.type === 'text' || tpl.header?.type === 'image' || tpl.header?.type === 'document' ? tpl.header.type : 'none') as HeaderType,
       text: tpl.header?.text
     },
     body: tpl.body,
@@ -94,9 +94,7 @@ function draftToTemplate(draft: TemplateDraft): WhatsAppTemplate {
 }
 
 export const WhatsAppTemplatesView: React.FC = () => {
-  const { provider } = useCrm();
-  const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [templates, setTemplates] = useState<WhatsAppTemplate[]>(INITIAL_TEMPLATES);
   const [activeTab, setActiveTab] = useState<'all' | 'local_draft' | 'approved' | 'pending' | 'rejected'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -111,74 +109,6 @@ export const WhatsAppTemplatesView: React.FC = () => {
 
   // Sync templates simulated state
   const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
-
-  const loadTemplates = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const [providerTpls, drafts] = await Promise.all([
-        provider.getProviderTemplates().catch(() => []),
-        provider.getTemplateDrafts().catch(() => []),
-      ]);
-
-      const formattedProvider: WhatsAppTemplate[] = providerTpls.map(pt => {
-        const bodyComp = pt.components.find(c => c.type === 'BODY');
-        const headerComp = pt.components.find(c => c.type === 'HEADER');
-        const footerComp = pt.components.find(c => c.type === 'FOOTER');
-        const buttonsComp = pt.components.find(c => c.type === 'BUTTONS');
-
-        return {
-          id: pt.id,
-          name: pt.name,
-          category: pt.category,
-          language: pt.language,
-          status: pt.status.toLowerCase() as any,
-          source: 'provider',
-          isCampaignEligible: pt.campaign_eligible,
-          lastSyncedAt: pt.last_synced_at || 'Recently',
-          header: headerComp ? {
-            type: (headerComp.format?.toLowerCase() || 'text') as any,
-            text: headerComp.text,
-          } : undefined,
-          body: bodyComp?.text || '',
-          footer: footerComp?.text,
-          buttons: buttonsComp?.buttons?.map((b: any) => ({
-            type: b.type === 'URL' ? 'URL' : b.type === 'PHONE_NUMBER' ? 'PHONE_NUMBER' : 'QUICK_REPLY',
-            text: b.text,
-            value: b.url || b.phone_number,
-          })) || [],
-        };
-      });
-
-      const formattedDrafts: WhatsAppTemplate[] = drafts.map(d => ({
-        id: String(d.id),
-        name: d.name,
-        category: d.category,
-        language: d.language,
-        status: (d.status === 'draft' ? 'local_draft' : d.status) as any,
-        source: 'local_draft',
-        isCampaignEligible: false,
-        createdAt: d.created_at,
-        lastSyncedAt: undefined,
-        body: d.definition?.body?.text || '',
-        footer: d.definition?.footer?.text,
-        buttons: d.definition?.buttons?.map((b: any) => ({
-          type: b.type === 'URL' ? 'URL' : b.type === 'PHONE_NUMBER' ? 'PHONE_NUMBER' : 'QUICK_REPLY',
-          text: b.text,
-          value: b.url || b.phone_number,
-        })) || [],
-      }));
-
-      setTemplates([...formattedProvider, ...formattedDrafts]);
-    } catch (err) {
-      console.error('Failed to load templates:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [provider]);
-
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
 
   // Filtering
   const filtered = templates.filter((t) => {
@@ -195,7 +125,7 @@ export const WhatsAppTemplatesView: React.FC = () => {
 
   // Actions
   const handleOpenNewTemplate = () => {
-    setActiveDraft(SAMPLE_DRAFTS.appointment_reminder);
+    setActiveDraft(SAMPLE_DRAFTS_DICT?.appointment_reminder || SAMPLE_DRAFTS[0]);
     setViewMode('builder');
   };
 
@@ -214,7 +144,7 @@ export const WhatsAppTemplatesView: React.FC = () => {
     setViewMode('builder');
   };
 
-  const handleSaveFromBuilder = async (savedDraft: TemplateDraft) => {
+  const handleSaveFromBuilder = (savedDraft: TemplateDraft) => {
     const updatedTpl = draftToTemplate(savedDraft);
     setTemplates((prev) => {
       const exists = prev.some((t) => t.id === updatedTpl.id);
@@ -223,35 +153,14 @@ export const WhatsAppTemplatesView: React.FC = () => {
       }
       return [updatedTpl, ...prev];
     });
-
-    try {
-      await provider.createTemplateDraft({
-        name: savedDraft.name,
-        category: savedDraft.category,
-        language: savedDraft.language,
-        definition: {
-          header: savedDraft.header,
-          body: { text: savedDraft.body },
-          footer: { text: savedDraft.footer },
-          buttons: savedDraft.buttons,
-        },
-      });
-      loadTemplates();
-    } catch (err) {
-      console.error('Failed to persist draft to backend:', err);
-    }
   };
 
-  const handleTriggerSync = async () => {
+  const handleTriggerSync = () => {
     setSyncState('syncing');
-    try {
-      await loadTemplates();
+    setTimeout(() => {
       setSyncState('synced');
       setTimeout(() => setSyncState('idle'), 3500);
-    } catch {
-      setSyncState('error');
-      setTimeout(() => setSyncState('idle'), 3500);
-    }
+    }, 1200);
   };
 
   // IF IN BUILDER MODE: RENDER DEDICATED FULL-PAGE BUILDER WORKSPACE

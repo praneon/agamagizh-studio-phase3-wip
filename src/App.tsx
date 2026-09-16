@@ -623,6 +623,7 @@ export default function App() {
           currentWhatsAppSub={currentWhatsAppSub}
           onOpenQuickCompose={() => setIsQuickComposeOpen(true)}
           onOpenContact={(contact) => handleOpenConversationWithContact(contact)}
+          onNavigateSub={(sub) => handleNavigate('whatsapp', sub as any)}
         />
       )}
 

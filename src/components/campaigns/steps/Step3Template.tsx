@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { WhatsAppTemplate } from '../../../types';
-import { useCrm } from '../../../../context/CrmContext';
+import { INITIAL_TEMPLATES } from '../../../data/mockData';
 import { 
   Check, 
   Search, 
@@ -27,54 +27,12 @@ export const Step3Template: React.FC<Step3TemplateProps> = ({
   onSelectTemplate,
   showErrors
 }) => {
-  const { provider } = useCrm();
-  const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'UTILITY' | 'MARKETING' | 'AUTHENTICATION'>('ALL');
 
-  useEffect(() => {
-    let mounted = true;
-    provider.getProviderTemplates().then(pts => {
-      if (!mounted) return;
-      const formatted: WhatsAppTemplate[] = pts.map(pt => {
-        const bodyComp = pt.components.find(c => c.type === 'BODY');
-        const headerComp = pt.components.find(c => c.type === 'HEADER');
-        const footerComp = pt.components.find(c => c.type === 'FOOTER');
-        const buttonsComp = pt.components.find(c => c.type === 'BUTTONS');
+  const selectedTemplate = INITIAL_TEMPLATES.find(t => t.id === selectedTemplateId);
 
-        return {
-          id: pt.id,
-          name: pt.name,
-          category: pt.category,
-          language: pt.language,
-          status: pt.status.toLowerCase() as any,
-          source: 'provider',
-          isCampaignEligible: pt.campaign_eligible,
-          lastSyncedAt: pt.last_synced_at || 'Recently',
-          header: headerComp ? {
-            type: (headerComp.format?.toLowerCase() || 'text') as any,
-            text: headerComp.text,
-          } : undefined,
-          body: bodyComp?.text || '',
-          footer: footerComp?.text,
-          buttons: buttonsComp?.buttons?.map((b: any) => ({
-            type: b.type === 'URL' ? 'URL' : b.type === 'PHONE_NUMBER' ? 'PHONE_NUMBER' : 'QUICK_REPLY',
-            text: b.text,
-            value: b.url || b.phone_number,
-          })) || [],
-        };
-      });
-      setTemplates(formatted);
-    }).catch(err => console.error('Failed to load templates:', err));
-
-    return () => {
-      mounted = false;
-    };
-  }, [provider]);
-
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-
-  const filteredTemplates = templates.filter((tpl) => {
+  const filteredTemplates = INITIAL_TEMPLATES.filter((tpl) => {
     if (categoryFilter !== 'ALL' && tpl.category !== categoryFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();

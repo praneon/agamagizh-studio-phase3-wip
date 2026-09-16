@@ -76,7 +76,6 @@ export const ClinicPipelineView: React.FC<ClinicPipelineViewProps> = ({
             onOpenContact(item);
           }
         }}
-        onMoveCard={onMoveStage}
       />
     </div>
   );

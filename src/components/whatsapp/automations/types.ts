@@ -1,66 +1,19 @@
-export type RuleLifecycleStatus = 'Draft' | 'Enabled' | 'Disabled' | 'Archived';
-
-export type RuleTriggerType = 
-  | 'conversation_created'
+export type RuleTriggerType =
   | 'message_received'
-  | 'conversation_updated'
-  | 'contact_updated'
-  | 'label_added';
+  | 'conversation_opened'
+  | 'status_changed'
+  | 'contact_created';
 
-export interface TriggerDefinition {
-  type: RuleTriggerType;
-  label: string;
-  description: string;
-  defaultChannel: 'whatsapp';
-  configurableFields: ('inbox' | 'messageDirection' | 'targetLabel')[];
-}
-
-export interface TriggerConfig {
-  channel: 'whatsapp';
-  inbox: string;
-  messageDirection?: 'incoming' | 'outgoing';
-  targetLabel?: string;
-}
-
-export type FieldDataType = 'text' | 'selection' | 'label' | 'boolean';
-
-export interface FieldDefinition {
-  id: string;
-  label: string;
-  dataType: FieldDataType;
-  options?: { label: string; value: string }[];
-  placeholder?: string;
-}
-
-export interface OperatorDefinition {
-  value: string;
-  label: string;
-}
-
-export interface RuleConditionItem {
+export interface AutomationCondition {
   id: string;
   field: string;
-  operator: string;
+  operator: 'equals' | 'contains' | 'not_equals' | 'is_present';
   value: string;
 }
 
-export type RuleActionType = 
-  | 'assign_conversation'
-  | 'add_label'
-  | 'remove_label'
-  | 'change_status'
-  | 'send_message';
-
-export interface ActionDefinition {
-  type: RuleActionType;
-  label: string;
-  description: string;
-  defaultParams: Record<string, string>;
-}
-
-export interface RuleActionItem {
+export interface AutomationAction {
   id: string;
-  type: RuleActionType;
+  type: 'assign_conversation' | 'add_label' | 'send_template' | 'resolve' | 'snooze';
   params: Record<string, string>;
 }
 
@@ -68,21 +21,16 @@ export interface AutomationRuleItem {
   id: string;
   name: string;
   description: string;
-  status: RuleLifecycleStatus;
+  status: 'Active' | 'Draft' | 'Paused';
   triggerType: RuleTriggerType;
-  triggerConfig: TriggerConfig;
+  triggerConfig?: {
+    channel?: string;
+    inbox?: string;
+    messageDirection?: 'incoming' | 'outgoing';
+  };
   matchMode: 'ALL' | 'ANY';
-  conditions: RuleConditionItem[];
-  actions: RuleActionItem[];
+  conditions: AutomationCondition[];
+  actions: AutomationAction[];
   executionCount: number;
   lastUpdated: string;
 }
-
-export interface ValidationIssue {
-  id: string;
-  section: 'name' | 'trigger' | 'conditions' | 'actions';
-  targetId?: string;
-  message: string;
-}
-
-export type SaveState = 'saved' | 'unsaved' | 'saving' | 'error';

@@ -1,32 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Company } from '../../types';
 import { Building2, Search, Plus, ExternalLink, Users, MessageSquare, Phone, MapPin } from 'lucide-react';
-import { useCrm } from '../../context/CrmContext';
-import { toStudioCompany } from '../../adapters/crmAdapter';
+import { INITIAL_COMPANIES } from '../../data/mockData';
 
 export const CompaniesView: React.FC = () => {
-  const { provider, accountContext } = useCrm();
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companies, setCompanies] = useState<Company[]>(INITIAL_COMPANIES);
   const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    provider.getCompanies()
-      .then((comps) => {
-        if (isMounted) {
-          setCompanies((comps || []).map(toStudioCompany));
-        }
-      })
-      .catch((err) => {
-        console.warn('Failed to load companies from CRM:', err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-    return () => { isMounted = false; };
-  }, [provider, accountContext.activeAccount?.id]);
 
   const filtered = companies.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) || 

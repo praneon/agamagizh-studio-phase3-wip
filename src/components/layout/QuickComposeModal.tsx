@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Send, MessageSquare, Phone, User, Tag } from 'lucide-react';
-import { useCrm } from '../../context/CrmContext';
-import { CrmInbox } from '../../types/crm';
+import { INBOXES_LIST } from '../../data/mockData';
 import { Contact } from '../../types';
 
 interface QuickComposeModalProps {
@@ -19,27 +18,11 @@ export const QuickComposeModal: React.FC<QuickComposeModalProps> = ({
   onSendMessage,
   onSend
 }) => {
-  const { provider } = useCrm();
-  const [inboxes, setInboxes] = useState<CrmInbox[]>([]);
   const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [customName, setCustomName] = useState('');
   const [customPhone, setCustomPhone] = useState('');
-  const [inbox, setInbox] = useState('');
+  const [inbox, setInbox] = useState(INBOXES_LIST[0].name);
   const [messageText, setMessageText] = useState('');
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getInboxes().then(list => {
-      if (!mounted) return;
-      setInboxes(list);
-      if (list.length > 0 && !inbox) {
-        setInbox(list[0].name);
-      }
-    }).catch(err => console.error('Failed to load inboxes:', err));
-    return () => {
-      mounted = false;
-    };
-  }, [provider, inbox]);
 
   if (!isOpen) return null;
 
@@ -100,9 +83,9 @@ export const QuickComposeModal: React.FC<QuickComposeModalProps> = ({
               onChange={(e) => setInbox(e.target.value)}
               className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5A4AD2] focus:bg-white text-slate-800"
             >
-              {inboxes.map((ib) => (
+              {INBOXES_LIST.map((ib) => (
                 <option key={ib.id} value={ib.name}>
-                  {ib.name} ({ib.phone_number || (ib as any).phone || 'WhatsApp'})
+                  {ib.name} ({ib.phone})
                 </option>
               ))}
             </select>

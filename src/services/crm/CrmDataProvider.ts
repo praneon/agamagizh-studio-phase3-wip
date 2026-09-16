@@ -51,7 +51,7 @@ export interface CrmDataProvider {
   getTeams(): Promise<CrmTeam[]>;
 
   // Conversations & Messages
-  getConversations(params?: { status?: string; q?: string; page?: number }): Promise<{
+  getConversations(params?: { status?: string; q?: string; page?: number; perPage?: number; per_page?: number }): Promise<{
     conversations: CrmConversationSummary[];
     meta: { count: number; page: number; per_page: number };
   }>;
@@ -69,7 +69,7 @@ export interface CrmDataProvider {
   updateConversationLabels(conversationId: number | string, labels: string[]): Promise<void>;
 
   // Contacts
-  getContacts(params?: { q?: string; page?: number }): Promise<{
+  getContacts(params?: { q?: string; page?: number; perPage?: number; per_page?: number }): Promise<{
     contacts: CrmContactSummary[];
     meta: { count: number; page: number; per_page: number };
   }>;

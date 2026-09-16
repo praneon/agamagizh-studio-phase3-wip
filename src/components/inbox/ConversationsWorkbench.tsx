@@ -37,9 +37,8 @@ import {
   Download,
   RotateCcw
 } from 'lucide-react';
+import { AGENTS_LIST, INITIAL_CONTACTS } from '../../data/mockData';
 import { WhatsAppEmbeddedSignupModal } from '../whatsapp/WhatsAppEmbeddedSignupModal';
-import { useCrm } from '../../context/CrmContext';
-import { toStudioContact } from '../../adapters/crmAdapter';
 
 interface ConversationsWorkbenchProps {
   conversations: Conversation[];
@@ -68,25 +67,6 @@ export const ConversationsWorkbench: React.FC<ConversationsWorkbenchProps> = ({
   onOpenQuickCompose,
   onOpenContact
 }) => {
-  const { provider } = useCrm();
-  const [agents, setAgents] = useState<{ id: string | number; name: string }[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    provider.getAgents().then(list => {
-      if (mounted) setAgents(list.map(a => ({ id: a.id, name: a.name })));
-    }).catch(err => console.warn(err));
-
-    provider.getContacts({ page: 1, perPage: 100 }).then(res => {
-      if (mounted) {
-        setContacts(res.contacts.map(toStudioContact));
-      }
-    }).catch(err => console.warn(err));
-
-    return () => { mounted = false; };
-  }, [provider]);
-
   // Inbox / Channel filter
   const [selectedInbox, setSelectedInbox] = useState<'all' | 'main' | 'adyar'>('all');
   
@@ -153,7 +133,7 @@ export const ConversationsWorkbench: React.FC<ConversationsWorkbenchProps> = ({
   const activeConvo = conversations.find(c => c.id === activeConvoId) || filteredConversations[0] || conversations[0];
 
   // Matched contact record
-  const matchedContact = contacts.find(c => c.id === activeConvo?.contactId || c.phone === activeConvo?.contactPhone);
+  const matchedContact = INITIAL_CONTACTS.find(c => c.id === activeConvo?.contactId || c.phone === activeConvo?.contactPhone);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -873,7 +853,7 @@ export const ConversationsWorkbench: React.FC<ConversationsWorkbenchProps> = ({
                   onChange={(e) => onUpdateAssignee && onUpdateAssignee(activeConvo.id, e.target.value)}
                   className="w-full text-xs p-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-[#5A4AD2]"
                 >
-                  {agents.map((ag) => (
+                  {AGENTS_LIST.map((ag) => (
                     <option key={ag.id} value={ag.name}>{ag.name}</option>
                   ))}
                   <option value="Unassigned">Unassigned</option>
